@@ -24,30 +24,35 @@ class ScopeWhere
      */
     public static function handle(Builder|QueryBuilder $builder, array $validated, string $boolean = 'and'): Builder|QueryBuilder
     {
-        foreach ($validated ?? [] as $column => $scope) {
+        foreach ($validated ?? [] as $column => $filter) {
+            $originalColumn = $column;
+            foreach ($filter as $key => $value) {
+                $scope = [$key => $value];
+                $column = $originalColumn;
 
-            if (is_integer($column)) {
-                $builder = self::handle($builder, $scope, $boolean);
-                continue;
-            }
+                if (is_integer($column)) {
+                    $builder = self::handle($builder, $scope, $boolean);
+                    continue;
+                }
 
-            [$operator, $value] = Extract::operatorAndValue($scope);
+                [$operator, $value] = Extract::operatorAndValue($scope);
 
-            if (str($column)->contains('.') && !self::isJsonColumn($builder, $column)) {
-                $builder = self::handleRelation($builder, $boolean, $column, $scope);
-                continue;
-            } elseif (str($column)->contains('.') && self::isJsonColumn($builder, $column)) {
-                $column = "{$builder->getModel()->getTable()}.".str($column)->replace('.', '->')->value();
-            } else {
-                $column = "{$builder->getModel()->getTable()}.$column";
-            }
+                if (str($column)->contains('.') && !self::isJsonColumn($builder, $column)) {
+                    $builder = self::handleRelation($builder, $boolean, $column, $scope);
+                    continue;
+                } elseif (str($column)->contains('.') && self::isJsonColumn($builder, $column)) {
+                    $column = "{$builder->getModel()->getTable()}.".str($column)->replace('.', '->')->value();
+                } else {
+                    $column = "{$builder->getModel()->getTable()}.$column";
+                }
 
-            if ($value === 'null' && $operator === '=') {
-                $builder->whereNull($column);
-            } elseif ($value === 'null' && $operator === '!=') {
-                $builder->whereNotNull($column);
-            } else {
-                $builder->where($column, $operator, $value, $boolean);
+                if ($value === 'null' && $operator === '=') {
+                    $builder->whereNull($column);
+                } elseif ($value === 'null' && $operator === '!=') {
+                    $builder->whereNotNull($column);
+                } else {
+                    $builder->where($column, $operator, $value, $boolean);
+                }
             }
         }
 
