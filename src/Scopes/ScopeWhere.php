@@ -26,7 +26,7 @@ class ScopeWhere
     {
         foreach ($validated ?? [] as $column => $filter) {
             $originalColumn = $column;
-            foreach ($filter as $key => $value) {
+            foreach ((array)$filter as $key => $value) {
                 $scope = [$key => $value];
                 $column = $originalColumn;
 
@@ -55,7 +55,6 @@ class ScopeWhere
                 }
             }
         }
-
         return $builder;
     }
 
